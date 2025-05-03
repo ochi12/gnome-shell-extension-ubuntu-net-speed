@@ -175,11 +175,12 @@ const Indicator = GObject.registerClass(
 export default class IndicatorExampleExtension extends Extension {
   enable() {
     this._indicator = new Indicator(this);
-    Main.panel.addToStatusArea(this.uuid, this._indicator);
+    Main.panel.addToStatusArea(this.uuid, this._indicator, 0);
 
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
 
+    this._refreshTimeout = null;
     this._refreshTimeout = GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,
       SAMPLING_INTERVAL_SECONDS,
@@ -196,9 +197,9 @@ export default class IndicatorExampleExtension extends Extension {
       this._indicator = null;
     }
 
-    if (this._timeout != null) {
-      GLib.source_remove(this._timeout);
-      this._timeout = null;
+    if (this._refreshTimeout != null) {
+      GLib.source_remove(this._refreshTimeout);
+      this._refreshTimeout = null;
     }
 
     this._decoder = null;
