@@ -154,8 +154,8 @@ const Indicator = GObject.registerClass(
     }
     _formatSpeed(speed) {
       let i = 0;
-      while (speed >= 1024 && i < ByteUnits.length - 1) {
-        speed /= 1024;
+      while (speed >= 1000 && i < ByteUnits.length - 1) {
+        speed /= 1000;
         i++;
       }
 
