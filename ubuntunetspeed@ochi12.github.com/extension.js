@@ -133,7 +133,7 @@ const Indicator = GObject.registerClass(
       });
 
       this._label = new St.Label({
-        text: "0 Bps",
+        text: "0 bps",
         y_align: Clutter.ActorAlign.CENTER,
       });
 
@@ -181,7 +181,7 @@ const Indicator = GObject.registerClass(
   },
 );
 
-export default class IndicatorExampleExtension extends Extension {
+export default class UbuntuNetSpeedExtension extends Extension {
   enable() {
     this._indicator = new Indicator(this);
     Main.panel.addToStatusArea(this.uuid, this._indicator, 0);

@@ -2,7 +2,9 @@
   "name": "Ubuntu Net Speed",
   "description": "A simple extension that shows the current network speed",
   "uuid": "ubuntunetspeed@ochi12.github.com",
+  "version": 1,
   "shell-version": [
     "48"
-  ]
+  ],
+  "url": "https://github.com/ochi12/ubuntu-net-speed/"
 }
