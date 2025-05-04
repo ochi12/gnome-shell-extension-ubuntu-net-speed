@@ -62,15 +62,15 @@ const networkIfacePrefixes = [
 ];
 
 const ByteUnits = [
-  "Bps",
-  "KBps",
-  "MBps",
-  "GBps",
-  "TBps",
-  "PBps",
-  "EBps",
-  "ZBps",
-  "YBps",
+  "bps",
+  "kbps",
+  "Mbps",
+  "Gbps",
+  "Tbps",
+  "Pbps",
+  "Ebps",
+  "Zbps",
+  "Ybps",
 ];
 
 const SAMPLING_INTERVAL_SECONDS = 3;
