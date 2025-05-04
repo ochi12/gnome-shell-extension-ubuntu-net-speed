@@ -76,8 +76,10 @@ const ByteUnits = [
 const SAMPLING_INTERVAL_SECONDS = 3;
 
 const IconName = {
-  Upload: "net-speed-upload-symbolic",
-  Download: "net-speed-download-symbolic",
+  Arrows: "vertical-arrows-symbolic",
+  ArrowsNone: "vertical-arrows-none-symbolic",
+  ArrowsUpNone: "vertical-arrows-up-none-symbolic",
+  ArrowsDownNone: "vertical-arrows-down-none-symbolic",
 };
 
 const Path = {
@@ -98,16 +100,30 @@ const Indicator = GObject.registerClass(
 
       let icon_theme = new St.IconTheme();
 
-      let icon_upload = icon_theme.has_icon(IconName.Upload)
-        ? Gio.ThemedIcon.new(IconName.Upload)
+      this._gicon_arrows = icon_theme.has_icon(IconName.Arrows)
+        ? Gio.ThemedIcon.new(IconName.Arrows)
         : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.Upload}.svg`,
+            `${Me.path}${Path.Actions}${IconName.Arrows}.svg`,
           );
 
-      let icon_download = icon_theme.has_icon(IconName.Download)
-        ? Gio.ThemedIcon.new(IconName.Download)
+      this._gicon_arrows_none = icon_theme.has_icon(IconName.ArrowsNone)
+        ? Gio.ThemedIcon.new(IconName.ArrowsNone)
         : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.Download}.svg`,
+            `${Me.path}${Path.Actions}${IconName.ArrowsNone}.svg`,
+          );
+
+      this._gicon_arrows_up_none = icon_theme.has_icon(IconName.ArrowsUpNone)
+        ? Gio.ThemedIcon.new(IconName.ArrowsUpNone)
+        : Gio.icon_new_for_string(
+            `${Me.path}${Path.Actions}${IconName.ArrowsUpNone}.svg`,
+          );
+
+      this._gicon_arrows_down_none = icon_theme.has_icon(
+        IconName.ArrowsDownNone,
+      )
+        ? Gio.ThemedIcon.new(IconName.ArrowsDownNone)
+        : Gio.icon_new_for_string(
+            `${Me.path}${Path.Actions}${IconName.ArrowsDownNone}.svg`,
           );
 
       let box = new St.BoxLayout({
@@ -116,39 +132,19 @@ const Indicator = GObject.registerClass(
         y_expand: false,
       });
 
-      this._labelUpload = new St.Label({
-        text: "0 Bps ",
-        y_align: Clutter.ActorAlign.CENTER,
-      });
-
-      this._labelDownload = new St.Label({
+      this._label = new St.Label({
         text: "0 Bps",
         y_align: Clutter.ActorAlign.CENTER,
       });
 
-      let iconUpload = new St.Icon({
-        gicon: icon_upload,
+      this._icon = new St.Icon({
+        gicon: this._gicon_arrows_none,
         style_class: "system-status-icon",
       });
+      this._icon.set_style("padding: 0; margin: 0 2px 0 0");
 
-      let iconDownload = new St.Icon({
-        gicon: icon_download,
-        style_class: "system-status-icon",
-      });
-
-      iconUpload.set_style(`
-          padding-left: 4px;
-          padding-right: 0px
-        `);
-
-      iconDownload.set_style(`
-          padding: 0px
-        `);
-
-      box.add_child(iconDownload);
-      box.add_child(this._labelDownload);
-      box.add_child(iconUpload);
-      box.add_child(this._labelUpload);
+      box.add_child(this._icon);
+      box.add_child(this._label);
 
       this.add_child(box);
     }
@@ -166,8 +162,21 @@ const Indicator = GObject.registerClass(
     }
 
     updateSpeedLabel(speed) {
-      this._labelUpload.set_text(this._formatSpeed(speed.Upload) + " ");
-      this._labelDownload.set_text(this._formatSpeed(speed.Download));
+      let netSpeed = speed.Download + speed.Upload;
+      console.log(
+        `UP: ${speed.Upload} DOWN: ${speed.Download} Net: ${netSpeed}`,
+      );
+      if (speed.Download === 0 && speed.Upload === 0) {
+        this._icon.set_gicon(this._gicon_arrows_none);
+      } else if (speed.Upload === 0) {
+        this._icon.set_gicon(this._gicon_arrows_up_none);
+      } else if (speed.Download === 0) {
+        this._icon.set_gicon(this._gicon_arrows_down_none);
+      } else {
+        this._icon.set_gicon(this._gicon_arrows);
+      }
+
+      this._label.set_text(this._formatSpeed(netSpeed));
     }
   },
 );
