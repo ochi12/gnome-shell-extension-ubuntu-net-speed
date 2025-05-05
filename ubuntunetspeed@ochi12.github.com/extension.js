@@ -23,6 +23,11 @@ import Clutter from "gi://Clutter";
 import GLib from "gi://GLib";
 
 import {
+  QuickToggle,
+  SystemIndicator,
+} from "resource:///org/gnome/shell/ui/quickSettings.js";
+
+import {
   Extension,
   gettext as _,
 } from "resource:///org/gnome/shell/extensions/extension.js";
@@ -93,69 +98,52 @@ const isVirtualInterface = (name) => {
   });
 };
 
-const Indicator = GObject.registerClass(
-  class Indicator extends PanelMenu.Button {
-    _init(Me) {
-      super._init(0.0, _("My Shiny Indicator"));
+const UbuntuNetSpeed = GObject.registerClass(
+  class UbuntuNetSpeed extends SystemIndicator {
+    constructor(Me) {
+      super();
+      this._path = Me.path;
+      this._icon_theme = new St.IconTheme();
 
-      let icon_theme = new St.IconTheme();
-
-      this._gicon_arrows = icon_theme.has_icon(IconName.Arrows)
-        ? Gio.ThemedIcon.new(IconName.Arrows)
-        : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.Arrows}.svg`,
-          );
-
-      this._gicon_arrows_none = icon_theme.has_icon(IconName.ArrowsNone)
-        ? Gio.ThemedIcon.new(IconName.ArrowsNone)
-        : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.ArrowsNone}.svg`,
-          );
-
-      this._gicon_arrows_up_none = icon_theme.has_icon(IconName.ArrowsUpNone)
-        ? Gio.ThemedIcon.new(IconName.ArrowsUpNone)
-        : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.ArrowsUpNone}.svg`,
-          );
-
-      this._gicon_arrows_down_none = icon_theme.has_icon(
-        IconName.ArrowsDownNone,
-      )
-        ? Gio.ThemedIcon.new(IconName.ArrowsDownNone)
-        : Gio.icon_new_for_string(
-            `${Me.path}${Path.Actions}${IconName.ArrowsDownNone}.svg`,
-          );
-
-      let box = new St.BoxLayout({
-        vertical: false,
-        y_align: Clutter.ActorAlign.CENTER,
-        y_expand: false,
-      });
+      this._gicon_arrows = this._get_gicon(IconName.Arrows);
+      this._gicon_arrows_none = this._get_gicon(IconName.ArrowsNone);
+      this._gicon_arrows_up_none = this._get_gicon(IconName.ArrowsUpNone);
+      this._gicon_arrows_down_none = this._get_gicon(IconName.ArrowsDownNone);
+      this._indicator = this._addIndicator();
+      this._indicator.gicon = this._gicon_arrows_none;
+      this._indicator.add_style_class_name("ubuntu-netspeed-indicator");
 
       this._label = new St.Label({
         text: "0 bps",
         y_align: Clutter.ActorAlign.CENTER,
       });
 
-      this._icon = new St.Icon({
-        gicon: this._gicon_arrows_none,
-        style_class: "system-status-icon",
-      });
-      this._icon.set_style("padding: 0; margin: 0 2px 0 0");
-
-      box.add_child(this._icon);
-      box.add_child(this._label);
-
-      this.add_child(box);
-
-      this.connect("button-press-event", () => {
-        const quickSettings = Main.panel.statusArea.quickSettings;
-        if (quickSettings) {
-          quickSettings.menu.open();
-        }
-      });
+      this.add_child(this._label);
     }
-    _formatSpeed(speed) {
+    _get_gicon(name) {
+      let gicon = this._icon_theme.has_icon(name)
+        ? Gio.ThemedIcon.new(name)
+        : Gio.icon_new_for_string(`${this._path}${Path.Actions}${name}.svg`);
+      return gicon;
+    }
+    update(speed) {
+      let netSpeed = speed.Download + speed.Upload;
+
+      //console.log(`D:${speed.Download} U:${speed.Upload}`);
+
+      if (speed.Upload === 0 && speed.Download === 0) {
+        this._indicator.gicon = this._gicon_arrows_none;
+      } else if (speed.Upload === 0) {
+        this._indicator.gicon = this._gicon_arrows_up_none;
+      } else if (speed.Download === 0) {
+        this._indicator.gicon = this._gicon_arrows_down_none;
+      } else {
+        this._indicator.gicon = this._gicon_arrows;
+      }
+
+      this._label.set_text(this._format(netSpeed));
+    }
+    _format(speed) {
       let i = 0;
       while (speed >= 1000 && i < ByteUnits.length - 1) {
         speed /= 1000;
@@ -168,30 +156,27 @@ const Indicator = GObject.registerClass(
       return `${speed.toFixed(accuracy)} ${ByteUnits[i]}`;
     }
 
-    updateSpeedLabel(speed) {
-      let netSpeed = speed.Download + speed.Upload;
-      console.log(
-        `UP: ${speed.Upload} DOWN: ${speed.Download} Net: ${netSpeed}`,
-      );
-      if (speed.Download === 0 && speed.Upload === 0) {
-        this._icon.set_gicon(this._gicon_arrows_none);
-      } else if (speed.Upload === 0) {
-        this._icon.set_gicon(this._gicon_arrows_up_none);
-      } else if (speed.Download === 0) {
-        this._icon.set_gicon(this._gicon_arrows_down_none);
-      } else {
-        this._icon.set_gicon(this._gicon_arrows);
-      }
+    destroy() {
+      this._label.destroy();
+      this._label = null;
 
-      this._label.set_text(this._formatSpeed(netSpeed));
+      this._indicator = null;
+      this._gicon_arrows = null;
+      this._gicon_arrows_none = null;
+      this._gicon_arrows_up_none = null;
+      this._gicon_arrows_down_none = null;
+
+      super.destroy();
     }
   },
 );
 
 export default class UbuntuNetSpeedExtension extends Extension {
   enable() {
-    this._indicator = new Indicator(this);
-    Main.panel.addToStatusArea(this.uuid, this._indicator, 0);
+    this._net_indicator = new UbuntuNetSpeed(this);
+    Main.panel.statusArea.quickSettings.addExternalIndicator(
+      this._net_indicator,
+    );
 
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
@@ -201,17 +186,16 @@ export default class UbuntuNetSpeedExtension extends Extension {
       GLib.PRIORITY_DEFAULT,
       SAMPLING_INTERVAL_SECONDS,
       () => {
-        this._indicator.updateSpeedLabel(this._getNetSpeedSpeed());
+        let speed = this._getNetSpeedSpeed();
+        this._net_indicator.update(speed);
         return GLib.SOURCE_CONTINUE;
       },
     );
   }
 
   disable() {
-    if (this._indicator != null) {
-      this._indicator.destroy();
-      this._indicator = null;
-    }
+    this._net_indicator.destroy();
+    this._net_indicator = null;
 
     if (this._refreshTimeout != null) {
       GLib.source_remove(this._refreshTimeout);
