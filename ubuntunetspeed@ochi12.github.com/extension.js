@@ -147,6 +147,13 @@ const Indicator = GObject.registerClass(
       box.add_child(this._label);
 
       this.add_child(box);
+
+      this.connect("button-press-event", () => {
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        if (quickSettings) {
+          quickSettings.menu.open();
+        }
+      });
     }
     _formatSpeed(speed) {
       let i = 0;
