@@ -14,10 +14,6 @@ make sure 'make' is installed
 ## Installation of the Extension
 ### install
 ```bash
+$ make build
 $ make install
 ```
-### uninstall
-```bash
-$ make uninstall
-```
-
