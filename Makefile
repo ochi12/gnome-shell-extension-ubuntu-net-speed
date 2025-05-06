@@ -1,9 +1,19 @@
-EXT_UUID = ubuntunetspeed@ochi12.github.com
-EXT_DEST = $(HOME)/.local/share/gnome-shell/extensions/
+PACK_PATH = "ubuntunetspeed@ochi12.github.com.zip"
+EXTENSION_DIR = "ubuntunetspeed@ochi12.github.com"
+
+all: build install
+
+.PHONY: build install clean
+
+build:
+	rm -f $(PACK_PATH)
+	cd $(EXTENSION_DIR); \
+	gnome-extensions pack --extra-source=icons/; \
+	mv $(EXTENSION_DIR).shell-extension.zip ../$(PACK_PATH)
 
 install:
-	cp -r $(EXT_UUID)/ "$(EXT_DEST)"
+	gnome-extensions install $(PACK_PATH) --force
 
-uninstall:
-	rm -rf "$(EXT_DEST)"
+clean:
+	@rm -fv $(PACK_PATH)
 
