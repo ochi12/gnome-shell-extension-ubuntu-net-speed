@@ -1,5 +1,5 @@
 # ubuntu-net-speed
-A simple extension that shows the current network speed that follow a mobile os like minimal approach.
+A simple gnome shell extension that shows the current network speed that follows a mobile os like minimal approach.
 
 ## How the Minimal Approach Works
 
@@ -19,12 +19,10 @@ It’s actually a neat trick to minimize the clutter in the status bar. In this 
 
 4. **Both Upload and Download Are Zero:**
    - Both arrows are **fully transparent**, indicating no network activity.
-
-This design minimizes space usage while still conveying all necessary information about your current network speeds. The arrows' opacity allows the user to easily distinguish whether upload or download speed is active.
-
+     
 ---
 
-### 🔧 Summary of Logic:
+### Summary of Logic:
 - **Full opacity** for active speeds.
 - **Half opacity** for inactive speeds.
 - **Full transparency** when there’s no activity.
