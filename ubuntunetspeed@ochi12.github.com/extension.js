@@ -174,9 +174,9 @@ const UbuntuNetSpeed = GObject.registerClass(
 export default class UbuntuNetSpeedExtension extends Extension {
   enable() {
     this._net_indicator = new UbuntuNetSpeed(this);
-    this._quickSettings = Main.panel.statusArea.quickSettings;
-
-    this._quickSettings.addExternalIndicator(this._net_indicator);
+    Main.panel.statusArea.quickSettings.addExternalIndicator(
+      this._net_indicator,
+    );
 
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
