@@ -112,7 +112,7 @@ const UbuntuNetSpeed = GObject.registerClass(
       this._indicator.add_style_class_name("ubuntu-netspeed-indicator");
 
       this._label = new St.Label({
-        text: "0 bps",
+        text: "...",
         y_align: Clutter.ActorAlign.CENTER,
       });
 
@@ -177,10 +177,16 @@ export default class UbuntuNetSpeedExtension extends Extension {
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
 
-    this._positionFixer = this._startPositionFixer();
-    this._refreshTimeout = this._startRefreshTimeout();
+    this._positionFixer = null;
+    this._refreshTimeout = null;
 
     this._networkMonitor = Gio.NetworkMonitor.get_default();
+
+    if (this._networkMonitor.get_network_available()) {
+      this._positionFixer = this._startPositionFixer();
+      this._refreshTimeout = this._startRefreshTimeout();
+    }
+
     this._networkChangeId = this._networkMonitor.connect(
       "network-changed",
       () => {
