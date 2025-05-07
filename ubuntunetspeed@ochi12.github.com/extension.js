@@ -174,12 +174,25 @@ const UbuntuNetSpeed = GObject.registerClass(
 export default class UbuntuNetSpeedExtension extends Extension {
   enable() {
     this._net_indicator = new UbuntuNetSpeed(this);
-    Main.panel.statusArea.quickSettings.addExternalIndicator(
-      this._net_indicator,
-    );
+    this._quickSettings = Main.panel.statusArea.quickSettings;
+
+    this._quickSettings.addExternalIndicator(this._net_indicator);
 
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
+
+    this._positionFixer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+      let container = Main.panel.statusArea.quickSettings._indicators;
+
+      if (
+        container.contains(this._net_indicator) &&
+        container.get_children().indexOf(this._net_indicator) !== 0
+      ) {
+        container.set_child_at_index(this._net_indicator, 0);
+      }
+
+      return GLib.SOURCE_CONTINUE;
+    });
 
     this._refreshTimeout = null;
     this._refreshTimeout = GLib.timeout_add_seconds(
@@ -204,6 +217,11 @@ export default class UbuntuNetSpeedExtension extends Extension {
 
     this._decoder = null;
     this._lastNetBytes = null;
+
+    if (this._positionFixer) {
+      GLib.source_remove(this._positionFixer);
+      this._positionFixer = null;
+    }
   }
 
   _getNetSpeedSpeed() {
