@@ -127,8 +127,6 @@ const UbuntuNetSpeed = GObject.registerClass(
     update(speed) {
       let netSpeed = speed.Download + speed.Upload;
 
-      //console.log(`D:${speed.Download} U:${speed.Upload}`);
-
       if (speed.Upload === 0 && speed.Download === 0) {
         this._indicator.gicon = this._gicon_arrows_none;
       } else if (speed.Upload === 0) {
@@ -179,21 +177,29 @@ export default class UbuntuNetSpeedExtension extends Extension {
     this._decoder = new TextDecoder();
     this._lastNetBytes = { Download: 0, Upload: 0 };
 
-    this._positionFixer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-      let container = Main.panel.statusArea.quickSettings._indicators;
+    this._positionFixer = this._startPositionFixer();
+    this._refreshTimeout = this._startRefreshTimeout();
 
-      if (
-        container.contains(this._net_indicator) &&
-        container.get_children().indexOf(this._net_indicator) !== 0
-      ) {
-        container.set_child_at_index(this._net_indicator, 0);
-      }
+    this._networkMonitor = Gio.NetworkMonitor.get_default();
+    this._networkChangeId = this._networkMonitor.connect(
+      "network-changed",
+      () => {
+        const online = this._networkMonitor.get_network_available();
+        this._net_indicator.visible = online;
 
-      return GLib.SOURCE_CONTINUE;
-    });
+        if (online && this._refreshTimeout === null) {
+          this._refreshTimeout = this._startRefreshTimeout();
+          this._positionFixer = this._startPositionFixer();
+        } else if (!online && this._refreshTimeout !== null) {
+          GLib.source_remove(this._refreshTimeout);
+          this._refreshTimeout = null;
+        }
+      },
+    );
+  }
 
-    this._refreshTimeout = null;
-    this._refreshTimeout = GLib.timeout_add_seconds(
+  _startRefreshTimeout() {
+    return GLib.timeout_add_seconds(
       GLib.PRIORITY_DEFAULT,
       SAMPLING_INTERVAL_SECONDS,
       () => {
@@ -204,11 +210,24 @@ export default class UbuntuNetSpeedExtension extends Extension {
     );
   }
 
+  _startPositionFixer() {
+    return GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+      let container = Main.panel.statusArea.quickSettings._indicators;
+      if (
+        container.contains(this._net_indicator) &&
+        container.get_children().indexOf(this._net_indicator) !== 0
+      ) {
+        container.set_child_at_index(this._net_indicator, 0);
+      }
+      return GLib.SOURCE_CONTINUE;
+    });
+  }
+
   disable() {
     this._net_indicator.destroy();
     this._net_indicator = null;
 
-    if (this._refreshTimeout != null) {
+    if (this._refreshTimeout !== null) {
       GLib.source_remove(this._refreshTimeout);
       this._refreshTimeout = null;
     }
@@ -216,10 +235,13 @@ export default class UbuntuNetSpeedExtension extends Extension {
     this._decoder = null;
     this._lastNetBytes = null;
 
-    if (this._positionFixer) {
+    if (this._positionFixer !== null) {
       GLib.source_remove(this._positionFixer);
       this._positionFixer = null;
     }
+
+    this._networkMonitor.disconnect(this._networkChangeId);
+    this._networkChangeId = null;
   }
 
   _getNetSpeedSpeed() {
