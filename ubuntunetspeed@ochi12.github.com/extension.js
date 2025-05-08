@@ -185,6 +185,8 @@ export default class UbuntuNetSpeedExtension extends Extension {
     if (this._networkMonitor.get_network_available()) {
       this._positionFixer = this._startPositionFixer();
       this._refreshTimeout = this._startRefreshTimeout();
+    } else {
+      this._net_indicator.visible = false;
     }
 
     this._networkChangeId = this._networkMonitor.connect(
