@@ -1,6 +1,11 @@
 # ubuntu-net-speed
 A simple gnome shell extension that shows the current network speed that follows a mobile os like minimal approach.
 
+## Version 2 is Out. what's new?
+- [x] the indicator now lives with the quick settings tray icons.
+- [x] indicator is only visible if network is available
+- [x] indicator now has a yaru scalable icon fallback
+
 ## How the Minimal Approach Works
 
 If you're a mobile phone user, you've probably seen network speeds displayed at the top of the status bar (similar to Android). You may have wondered why only a single speed is shown, instead of both upload and download speeds (e.g., `⬇ 320Kbps ⬆ 120Kbps`).
